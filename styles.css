@@ -13,9 +13,11 @@ input {
 #field, #ratings {
 	transform: scaleY(-1);
 	position: absolute;
+	pointer-events:none
 }
 #ratings {
 	z-index: 2;
+	pointer-events:none;
 }
 #combo {
 	color: white;
