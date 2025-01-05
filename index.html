@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+
+<head>
+	<title>LNs</title>
+</head>
+
+<body>
+	<canvas id="field"></canvas>
+	<canvas id="ratings"></canvas>
+
+
+	<span id="combo">1</span>
+	<div id="options">
+		<table>
+			<tbody>
+				<tr>
+					<td><span>BPM:</span></td>
+					<td><input type="number" min="60" max="1000" id="bpm"></td>
+				</tr>
+				<tr>
+					<td><span>Scroll speed (ms):</span></td>
+					<td><input type="number" min="150" max="3000" id="scrollspeed"></td>
+				</tr>
+				<tr>
+					<td><span>Hit position (px):</span></td>
+					<td><input type="number" min="0" id="hitposition"></td>
+				</tr>
+				<tr>
+					<td><span>Key count:</span></td>
+					<td><input type="number" min="4" max="7" id="columns"></td>
+				</tr>
+				<tr>
+					<td><span>Column width (px):</span></td>
+					<td><input type="number" min="10" max="300" id="columnwidth"></td>
+				</tr>
+				<tr>
+					<td><span>Hit window (ms):</span></td>
+					<td><input type="number" min="4" max="500" id="hitwindow"></td>
+				</tr>
+			</tbody>
+		</table><br>
+
+		<span class="button" onclick="applyOptions()">apply</span>
+		<span class="button" onclick="saveOptions()">save</span>
+	</div>
+
+	<div id="stats">
+		<span id="bestcombo">best combo: 0</span></br>
+		<span id="combodifficulty"></span><br><br>
+		<span class="button" onclick="resetPB()">clear</span>
+	</div>
+</body>
+<link rel="stylesheet"  href="styles.css">
+<script src="main.js"></script>
+</html>

@@ -1,0 +1,59 @@
+body {
+	margin: 0;
+	padding: 0;
+	max-height: 100vh;
+	overflow-y: hidden;
+	background-color: #1a1a1a;
+	display: flex;
+	justify-content: center;
+}
+input {
+	width: 60px;
+}
+#field, #ratings {
+	transform: scaleY(-1);
+	position: absolute;
+}
+#ratings {
+	z-index: 2;
+}
+#combo {
+	color: white;
+	font-size: 40px;
+	text-shadow: #000 1px 0 10px;
+	position: absolute;
+	top: 50vh;
+}
+#options{
+	position: absolute;
+	left: 3px;
+	top:3px;
+	width: max-content;
+	height: min-content;
+	border-radius: 5px;
+	padding: 4px;
+	border: 2px solid rgb(17, 240, 154);
+	background-color: grey;
+}
+#options td:first-child{
+	text-align: right;
+}
+
+#stats {
+	position: absolute;
+	right: 3px;
+	top:3px;
+	width: max-content;
+	height: min-content;
+	border-radius: 5px;
+	padding: 4px;
+	border: 2px solid rgb(17, 240, 154);
+	background-color: grey;
+}
+.button{
+	border: 2px solid black;
+	border-radius: 2px;
+	padding: 2px;
+	background-color: white;
+	cursor: pointer;
+}
