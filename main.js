@@ -231,6 +231,7 @@ function combo(num, reset=false, column=undefined){
 	if(column!==undefined){
 		//draw hit/miss icons
 		bctx.beginPath()
+		bctx.clearRect(column*options.width+options.width/2-11,Number(options.hitPosition)+9,22,22)
 		bctx.arc(column*options.width+options.width/2, Number(options.hitPosition)+20, 10, 0,Math.PI*2)
 		if (num==1) bctx.fillStyle = "green"
 		else bctx.fillStyle = "red";
