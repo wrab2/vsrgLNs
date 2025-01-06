@@ -41,13 +41,30 @@
 		</table><br>
 
 		<span class="button" onclick="applyOptions()">apply</span>
-		<span class="button" onclick="saveOptions()">save</span>
+		<span class="button" onclick="editControls()">edit controls</span><br><br>
+		<span class="button" onclick="saveOptions()">save config</span>
 	</div>
 
 	<div id="stats">
 		<span id="bestcombo">best combo: 0</span></br>
 		<span id="combodifficulty"></span><br><br>
 		<span class="button" onclick="resetPB()">clear</span>
+	</div>
+
+	<div id="controls">
+		<div id="editcontrols">
+			<span style="height: min-content;">press keys you want to use</span></br>
+			<table id="controlstable">
+				<tbody>
+					<tr id="row1ofcontrols">
+
+					</tr>
+					<tr id="row2ofcontrols">
+
+					</tr>
+				</tbody>
+			</table>
+		</div>
 	</div>
 </body>
 <link rel="stylesheet"  href="styles.css">

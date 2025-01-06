@@ -43,6 +43,8 @@ let tmp = {
 	failedColumns:[],
 	combo:0,
 	bestcombo:0,
+	editingControls: false,
+	onkey:0,
 }
 
 function setup(){
@@ -138,10 +140,7 @@ function draw() {
 				ctx.fill()
 			}
 		}
-		
-
 	}
-
 	requestAnimationFrame(draw)
 }
 
@@ -167,10 +166,6 @@ function generateNotes(){
 	//capture late presses/lifts
 	setTimeout(() => {
 		for(let i=0; i < tmp.notes[0].length; i++){
-			/*if(tmp.state[i]!==tmp.notes[0][i]){
-				
-				tmp.failedColumns[i]=0
-			}*/
 			//LN started
 			if(tmp.lastNotes[i] === 0 && tmp.notes[0][i] === 1){
 				if(lastState[i] === 0 && tmp.state[i] === 1){
@@ -201,10 +196,6 @@ function generateNotes(){
 					//late lift
 					combo(1, false, i)
 				} else if
-					//exact or early lift
-				//(lastState[i] === 1 && tmp.state[i] === 0 && Date.now() - tmp.stateChange < options.hitWindow*2){
-					//combo(1)
-				//} else if
 				//didn't lift
 				(tmp.state[i]===1){
 					combo(0, false, i)
@@ -262,34 +253,49 @@ function resetPB(){
 	combo(0, true)
 }
 
-
+function editControls(key = undefined){
+	tmp.editingControls = true
+	if(key && tmp.onkey < options.columns){
+		//assign the key
+		options.controls[options.columns][tmp.onkey] = key
+		tmp.onkey++
+		if(tmp.onkey == options.columns){
+			tmp.onkey = 0
+			tmp.editingControls = false
+			document.getElementById("controls").style.display = "none"
+		}
+	}
+		let str = ""
+		let str2 = ""
+		for(let i=0; i<options.columns; i++){
+			str+=`<td>${options.controls[options.columns][i]}</td>`
+			str2+=`<td>${tmp.onkey === i?"^":""}</td>`
+		}
+		document.getElementById("row1ofcontrols").innerHTML = str.replace(/Key/g,"")
+		document.getElementById("row2ofcontrols").innerHTML = str2
+		if (key === undefined){
+			return document.getElementById("controls").style.display = "flex"
+		}
+}
 window.onload = ()=>{
 	setup()
 	draw()
 } 
 
-
 window.addEventListener("keydown",(e) => {
 	if (e.repeat) return
+	if (tmp.editingControls){
+		return editControls(e.code)
+	}
 	let column = options.controls[options.columns].indexOf(e.code)
 	if (column !== -1) {
 		const now = Date.now()
 		const delta = Date.now() - tmp.lastAdded
 		tmp.state[column] = 1
 		tmp.stateChange[column] = now
-		
-		//timings :DDDDD
-	/*	if(delta < options.hitWindow || delta > (1000*(60/options.BPM)-options.hitWindow)){
-			if (delta <= options.hitWindow){
-				//late
-			} else {
-				//early
-				//combo(1)
-			}
-
-		}*/
 	}
 })
+
 window.addEventListener("keyup",(e) => {
 	if (e.repeat) return
 	let column = options.controls[options.columns].indexOf(e.code)
