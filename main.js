@@ -23,10 +23,15 @@ let options = {
 		"4":["KeyD","KeyF","KeyJ","KeyK"]
 	},
 	hitWindow:100,
+	type:"random",
 }
 let saved = localStorage.getItem("LNtr-options")
 if(saved!==null){
-	options = JSON.parse(saved)
+	let tempOptions = JSON.parse(saved)
+	for (const i of Object.keys(tempOptions)){
+		if(Object.keys(options).includes(i))
+			options[i] = tempOptions[i];
+	}
 }
 
 let tmp = {
@@ -45,6 +50,7 @@ let tmp = {
 	bestcombo:0,
 	editingControls: false,
 	onkey:0,
+	fhcounter:0,
 }
 
 function setup(){
@@ -60,11 +66,28 @@ function setup(){
 	tmp.state = Array.from({length: options.columns}, () => 0)
 	tmp.stateChange = [...tmp.state] 
 	tmp.failedColumns = Array.from({length: options.columns}, () => 1)
-	tmp.notes = Array.from({length: 30}, 
-		() => Array.from({length: options.columns}, 
-			() => Math.round(Math.random())
+	tmp.notes = []
+	if(options.type == "random"){
+		tmp.notes = Array.from({length: 30}, 
+			() => Array.from({length: options.columns}, 
+				() => Math.round(Math.random())
+			)
 		)
-	)
+	}
+	else if(options.type == "7everyother"){
+		console.log("asd")
+		tmp.fhcounter = 0
+		for(let i=0; i<30; i++){
+			if(tmp.fhcounter%2 == 0){
+				tmp.notes[i]=Array.from({length: options.columns}, () => 1)
+				
+			} else {
+				tmp.notes[i]=Array.from({length: options.columns}, () => Math.round(Math.random()))
+			}
+			tmp.fhcounter++
+		}
+	}
+
 	generateNotes()
 	clearInterval(tmp.interval)
 	tmp.interval = setInterval(() => {
@@ -77,6 +100,7 @@ function setup(){
 	document.getElementById("columns").value = options.columns
 	document.getElementById("columnwidth").value = options.width
 	document.getElementById("hitwindow").value = options.hitWindow
+	document.getElementById("patterntype").value = options.type
 }
 
 function draw() {
@@ -147,9 +171,28 @@ function draw() {
 function generateNotes(){
 	let lastState = [...tmp.state]
 	tmp.lastNotes = [...tmp.notes[0]]
-	tmp.notes.push(Array.from({length: options.columns}, 
-		() => Math.round(Math.random()))	
-	)
+	if(options.type == "random"){
+		tmp.notes.push(Array.from({length: options.columns}, 
+			() => Math.round(Math.random()))	
+		)	
+	} else
+	if(options.type == "7everyother"){
+		if(tmp.fhcounter%2 == 0){
+			tmp.notes.push(
+				Array.from({length: options.columns}, 
+					() => 1
+				)
+			)
+		} else {
+			tmp.notes.push(
+				Array.from({length: options.columns}, 
+					() => Math.round(Math.random())
+				)
+			)
+		}
+		tmp.fhcounter++
+	}
+
 	for(let i=0; i<tmp.failedColumns.length; i++){
 		if(tmp.failedColumns[i] === 0){
 			if(1 === tmp.notes[0][i] && 0 === tmp.notes[1][i] ||
@@ -242,6 +285,7 @@ function applyOptions(){
 	options.columns = document.getElementById("columns").value
 	options.width = document.getElementById("columnwidth").value
 	options.hitWindow = document.getElementById("hitwindow").value
+	options.type = document.getElementById("patterntype").value
 	setup()
 }
 
