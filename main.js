@@ -1,8 +1,177 @@
 const canvas = document.getElementById("field")
 const ratingscanvas = document.getElementById("ratings")
-const fieldHeight = window.innerHeight - 10
-let ctx
-let bctx
+
+class stageClass {
+	constructor(field, ratings) {
+		this.stage = field
+		this.ctx = this.stage.getContext("2d")
+		this.overlay = ratings
+		this.height = 0
+		this.width = 0
+		this.notes = {
+			height: 0,
+			lastAdded: 0,
+		}
+		this.draw = {
+			notes: (diff) => this.drawNotes(diff),
+			separators: () => this.drawSeparators(),
+			judgementLine: () => this.drawJudgementLine()
+		}
+
+		this.resize()
+		window.addEventListener("resize", this.resize.bind(this));
+	}
+	resize(){
+		this.height = window.innerHeight - 10
+		this.width = options.width * options.columns
+		this.stage.height = this.height
+		this.stage.width = this.width
+		this.overlay.height = this.height
+		this.overlay.width = this.width
+		//height per ms * ms per bpm
+		this.notes.height = (this.height / options.scrollSpeed) * (1000*(60/options.BPM))
+	}
+	clear(){
+		this.ctx.fillStyle = "black"
+		this.ctx.rect(0,0,this.width,this.height)
+		this.ctx.fill()
+	}
+	drawNotes(diff){
+		tmp.positionOffset += (this.height / options.scrollSpeed)*diff
+		for(let x=0; x<20; x++){
+			const notes = tmp.notes[x]
+			if(((this.notes.height*x)-tmp.positionOffset)>this.height)break
+			for(let i=0; i < notes.length; i++){
+				if(notes[i] === 1){
+					this.ctx.beginPath()
+					this.ctx.rect((i*(options.width * options.columns)/options.columns), (this.notes.height*x)-tmp.positionOffset,((options.width * options.columns)/options.columns),this.notes.height+1)
+					this.ctx.closePath()
+					this.ctx.fillStyle = colors[options.columns][i]
+					this.ctx.fill()
+					if(getLnLength(i)>=x && tmp.failedColumns[i]===0){
+						this.ctx.fillStyle="#00000030"
+						this.ctx.fill()
+					}
+				}
+			}
+		}
+	}
+	drawSeparators(){
+		this.ctx.beginPath()
+		for(let i=1; i<options.columns;i++){
+			this.ctx.moveTo(i * (options.width * options.columns) / options.columns, 0)
+			this.ctx.lineTo(i * (options.width * options.columns) / options.columns, this.height)
+		}
+		this.ctx.closePath()
+		this.ctx.strokeStyle = "gray"
+		this.ctx.lineWidth = "1"
+		this.ctx.stroke()
+	}
+	drawJudgementLine(){
+		for(let i=0; i<options.columns; i++){
+			this.ctx.beginPath()
+			this.ctx.moveTo(i*(options.width * options.columns) / options.columns, options.hitPosition)
+			this.ctx.lineTo((i+1)*(options.width * options.columns) / options.columns, options.hitPosition)
+			this.ctx.closePath()
+			if(tmp.inputState[i] === key.down){
+				this.ctx.lineWidth = "5"
+				this.ctx.strokeStyle = "green"
+				this.ctx.stroke()
+				if(tmp.failedColumns[i]===1){
+					this.ctx.rect(i*(options.width * options.columns)/options.columns, options.hitPosition, (options.width * options.columns)/options.columns, -1*options.hitPosition)
+					this.ctx.fillStyle="black"
+					this.ctx.fill()
+				}
+			} else {
+				this.ctx.lineWidth = "2"
+				this.ctx.strokeStyle = "white"
+				this.ctx.stroke()
+			}
+		}
+	}
+}
+
+class comboClass {
+	constructor(element, overlay){
+		this.element = element
+		this.overlayCtx = overlay.getContext("2d")
+		this.current = 0
+		this.best = 0
+		this.displayCombo()
+	}
+	displayCombo(){
+		this.element.textContent = this.current
+	}
+	displayPB(){
+		document.getElementById("bestcombo").textContent = "Best combo: "+this.best
+		document.getElementById("combodifficulty").innerHTML = "at "+options.BPM+" BPM, "+options.scrollSpeed+"ms speed, <br>"+options.columns+"k, "+options.hitWindow+"ms hit window"
+	}
+	hit(column){
+		this.current++
+		if(this.current>this.best){
+			this.best = this.current
+			this.displayPB()
+		}
+		this.displayCombo()
+		this.drawJudgementCircle(column, true)
+	}
+	miss(column){
+		this.current = 0
+		this.displayCombo()
+		this.drawJudgementCircle(column, false)
+	}
+	reset(){
+		this.best = 0
+		this.current = 0
+		this.displayCombo()
+		this.displayPB()
+	}
+	drawJudgementCircle(column, hit){
+		this.overlayCtx.beginPath()
+		this.overlayCtx.clearRect(column*options.width+options.width/2-11,Number(options.hitPosition)+9,22,22)
+		this.overlayCtx.arc(column*options.width+options.width/2, Number(options.hitPosition)+20, 10, 0,Math.PI*2)
+		if (hit) this.overlayCtx.fillStyle = "green"
+		else this.overlayCtx.fillStyle = "red";
+		this.overlayCtx.fill()
+	}
+}
+
+class patternClass {
+	constructor(name, columns) {
+    	this.next = this[name]
+    	this.columns = columns
+		this.fullHoldCounter = 1
+		this.bracketStart = 1
+	}
+	random(){
+		return (Array.from({length: this.columns}, 
+			() => Math.round(Math.random()))	
+		)	
+	}
+
+	fullEveryOther(){
+		this.fullHoldCounter = (this.fullHoldCounter+1)%2
+		if(this.fullHoldCounter % 2 == 0){
+			return (Array.from({length: this.columns},
+				() => 1
+			))
+		} else {
+			return (Array.from({length: this.columns}, 
+				() => Math.round(Math.random())
+			))
+		}
+	}
+
+	brackets(){
+		this.bracketStart = (this.bracketStart+1)%2
+		let arr = []
+		for(let i=0; i<this.columns; i++){
+			arr.push((this.bracketStart+i%2)%2)
+		}
+		return arr
+	}
+}
+
 const colors = {
 	"7":["#E3E3E3","#50DEFD","#E3E3E3","#FFF716","#E3E3E3","#50DEFD","#E3E3E3"],
 	"6":["#E3E3E3","#50DEFD","#E3E3E3","#E3E3E3","#50DEFD","#E3E3E3"],
@@ -33,77 +202,25 @@ if(saved!==null){
 			options[i] = tempOptions[i];
 	}
 }
-
+const key = {
+	down: 1,
+	up: 0
+}
 let tmp = {
 	notes: [],
 	lastNotes: Array.from({length: options.columns}, () => 0),
-	lastAdded: 0,
-	noteheight: 0,
-	pressCount: 0,
 	positionOffset: -1*options.hitPosition,
 	interval: undefined,
-	bitmap: undefined,
-	state:[],
+	inputState:[],
 	stateChange:[],
 	failedColumns:[],
 	combo:0,
 	bestcombo:0,
 	editingControls: false,
 	onkey:0,
-	fhcounter:0,
-	firstColDigit:0,
 }
 
-function setup(){
-	document.getElementById("field").click()
-	canvas.height = fieldHeight
-	canvas.width = (options.width * options.columns)
-	ratingscanvas.height = fieldHeight
-	ratingscanvas.width = (options.width * options.columns)
-	ctx = canvas.getContext("2d")
-	bctx = ratingscanvas.getContext("2d")
-	//height per ms * ms per bpm
-	tmp.noteheight = (fieldHeight / options.scrollSpeed) * (1000*(60/options.BPM))
-	tmp.state = Array.from({length: options.columns}, () => 0)
-	tmp.stateChange = [...tmp.state] 
-	tmp.failedColumns = Array.from({length: options.columns}, () => 1)
-	tmp.notes = []
-	if(options.type == "random"){
-		tmp.notes = Array.from({length: 30}, 
-			() => Array.from({length: options.columns}, 
-				() => Math.round(Math.random())
-			)
-		)
-	}
-	else if(options.type == "7everyother"){
-		tmp.fhcounter = 0
-		for(let i=0; i<30; i++){
-			if(tmp.fhcounter%2 == 0){
-				tmp.notes[i]=Array.from({length: options.columns}, () => 1)
-				
-			} else {
-				tmp.notes[i]=Array.from({length: options.columns}, () => Math.round(Math.random()))
-			}
-			tmp.fhcounter++
-		}
-	}
-
-	else if(options.type == "brackets"){
-		for(let i=0; i<30; i++){
-			tmp.notes.push([])
-			for(let x=0; x<options.columns; x++){
-				tmp.notes[i].push((tmp.firstColDigit+x%2)%2)
-			}
-			tmp.firstColDigit = (tmp.firstColDigit+1)%2
-		}
-	}
-
-	generateNotes()
-	clearInterval(tmp.interval)
-	tmp.interval = setInterval(() => {
-		generateNotes()
-	}, 1000*(60/options.BPM));
-
+function displayOptions(){
 	document.getElementById("bpm").value = options.BPM
 	document.getElementById("scrollspeed").value = options.scrollSpeed
 	document.getElementById("hitposition").value = options.hitPosition
@@ -113,108 +230,54 @@ function setup(){
 	document.getElementById("patterntype").value = options.type
 }
 
+const stage = new stageClass(canvas, ratingscanvas)
+const combo = new comboClass(document.getElementById("combo"), stage.overlay)
+
+function setup(){
+	displayOptions()
+	document.getElementById("field").focus()
+	stage.resize()
+	tmp.inputState = Array.from({length: options.columns}, () => key.up)
+	//I don't know what this next line does, probably nothing
+	tmp.stateChange = [...tmp.inputState]
+	tmp.failedColumns = Array.from({length: options.columns}, () => 1)
+	tmp.notes = []
+
+	const pattern = new patternClass(options.type, options.columns)
+	for (let i=0; i<30; i++){
+		tmp.notes.push(pattern.next())
+	}
+
+	generateNotes(pattern)
+	clearInterval(tmp.interval)
+	tmp.interval = setInterval(() => {
+		generateNotes(pattern)
+	}, 1000*(60/options.BPM));
+}
 function draw() {
 	const now = Date.now()
 	const diff = now - tmp.lastUpdate
 	tmp.lastUpdate = now
 
-	//clear field
-	ctx.fillStyle = "black"
-	ctx.rect(0,0,(options.width * options.columns),fieldHeight)
-	ctx.fill()
+	stage.clear()
+	stage.draw.notes(diff)
+	stage.draw.separators()
+	stage.draw.judgementLine()
 
-	//draw notes :DDD
-	tmp.positionOffset += (fieldHeight / options.scrollSpeed)*diff
-	for(let x=0; x<20; x++){
-		const notes = tmp.notes[x]
-		if(((tmp.noteheight*x)-tmp.positionOffset)>fieldHeight)break
-		for(let i=0; i < notes.length; i++){
-			if(notes[i] === 1){
-				ctx.beginPath()
-				ctx.rect((i*(options.width * options.columns)/options.columns), (tmp.noteheight*x)-tmp.positionOffset,((options.width * options.columns)/options.columns),tmp.noteheight+1)
-				ctx.closePath()
-				ctx.fillStyle = colors[options.columns][i]
-				ctx.fill()
-				if(getLnLength(i)>=x && tmp.failedColumns[i]===0){
-					ctx.fillStyle="#00000030"
-					ctx.fill()
-				}
-			}
-		}
-	}
-
-	//draw column separators
-	ctx.beginPath()
-	for(let i=1; i<options.columns;i++){
-		ctx.moveTo(i * (options.width * options.columns) / options.columns, 0)
-		ctx.lineTo(i * (options.width * options.columns) / options.columns, fieldHeight)
-	}
-	ctx.closePath()
-	ctx.strokeStyle = "gray"
-	ctx.lineWidth = "1"
-	ctx.stroke()
-
-	//draw judgement line
-	for(let i=0; i<options.columns; i++){
-		ctx.beginPath()
-		ctx.moveTo(i*(options.width * options.columns)/options.columns, options.hitPosition)
-		ctx.lineTo((i+1)*(options.width * options.columns)/options.columns,options.hitPosition)
-		ctx.closePath()
-		if(tmp.state[i]===0){
-			ctx.lineWidth = "2"
-			ctx.strokeStyle = "white"
-			ctx.stroke()
-		} else {
-			ctx.lineWidth = "5"
-			ctx.strokeStyle = "green"
-			ctx.stroke()
-			if(tmp.failedColumns[i]===1){
-				ctx.rect(i*(options.width * options.columns)/options.columns, options.hitPosition, (options.width * options.columns)/options.columns, -1*options.hitPosition)
-				ctx.fillStyle="black"
-				ctx.fill()
-			}
-		}
-	}
 	requestAnimationFrame(draw)
 }
 
-function generateNotes(){
-	let lastState = [...tmp.state]
+
+function generateNotes(pattern){
+	let lastState = [...tmp.inputState]
 	tmp.lastNotes = [...tmp.notes[0]]
-	if(options.type == "random"){
-		tmp.notes.push(Array.from({length: options.columns}, 
-			() => Math.round(Math.random()))	
-		)	
-	} 
-	else if(options.type == "7everyother"){
-		if(tmp.fhcounter%2 == 0){
-			tmp.notes.push(
-				Array.from({length: options.columns}, 
-					() => 1
-				)
-			)
-		} else {
-			tmp.notes.push(
-				Array.from({length: options.columns}, 
-					() => Math.round(Math.random())
-				)
-			)
-		}
-		tmp.fhcounter++
-	}
-	else if(options.type == "brackets"){
-		next=[]
-		for(let x=0; x<options.columns; x++){
-			next.push((tmp.firstColDigit+x%2)%2)
-		}
-		tmp.notes.push(next)
-		tmp.firstColDigit = (tmp.firstColDigit+1)%2
-	}
+	
+	tmp.notes.push(pattern.next())
 
 	for(let i=0; i<tmp.failedColumns.length; i++){
 		if(tmp.failedColumns[i] === 0){
 			if(1 === tmp.notes[0][i] && 0 === tmp.notes[1][i] ||
-				 tmp.state[i] === 0 && tmp.notes[0][i] === 0
+				 tmp.inputState[i] === key.up && tmp.notes[0][i] === 0
 			){
 				tmp.failedColumns[i] = 1
 			}
@@ -222,44 +285,44 @@ function generateNotes(){
 	}
 	tmp.notes.shift()
 	tmp.positionOffset = -1*options.hitPosition
-	tmp.lastAdded = Date.now()
+	stage.notes.lastAdded = Date.now()
 
 	//capture late presses/lifts
 	setTimeout(() => {
 		for(let i=0; i < tmp.notes[0].length; i++){
 			//LN started
 			if(tmp.lastNotes[i] === 0 && tmp.notes[0][i] === 1){
-				if(lastState[i] === 0 && tmp.state[i] === 1){
+				if(lastState[i] === key.up && tmp.inputState[i] === key.down){
 					//late hit
-					combo(1, false, i)
+					combo.hit(i)
 					tmp.failedColumns[i]=1
 				} else if
 					//exact or early hit
-				(tmp.state[i] === 1 && Date.now() - tmp.stateChange[i] < options.hitWindow*2){
-					combo(1, false, i)
+				(tmp.inputState[i] === key.down && Date.now() - tmp.stateChange[i] < options.hitWindow*2){
+					combo.hit(i)
 					tmp.failedColumns[i]=1
 				} else if
 					//didn't hit
-				(tmp.state[i]===0){
-					combo(0, false, i)
+				(tmp.inputState[i] === key.up){
+					combo.miss(i)
 					tmp.failedColumns[i]=0
 				} else if 
 					//hold instead of pressing
-				(tmp.state[i]===1 && Date.now() - tmp.stateChange[i] > options.hitWindow*2){
-					combo(0, false, i)
+				(tmp.inputState[i] === key.down && Date.now() - tmp.stateChange[i] > options.hitWindow*2){
+					combo.miss(i)
 					tmp.failedColumns[i]=0
 				}
 			//LN ended
 			} else if (tmp.lastNotes[i] === 1 && tmp.notes[0][i] === 0){
 				//unfail every column without a note
 				tmp.failedColumns[i]=1
-				if(lastState[i] === 1 && tmp.state[i] === 0){
+				if(lastState[i] === key.down && tmp.inputState[i] === key.up){
 					//late lift
-					combo(1, false, i)
+					combo.hit(i)
 				} else if
 				//didn't lift
-				(tmp.state[i]===1){
-					combo(0, false, i)
+				(tmp.inputState[i] === key.down){
+					combo.miss(i)
 				}
 			}
 		}
@@ -272,29 +335,6 @@ function getLnLength(column){
 	}
 }
 
-function combo(num, reset=false, column=undefined){
-	if(num === 0){
-		tmp.combo = 0
-	} else if
-	(num === 1){
-		tmp.combo++
-	}
-	document.getElementById("combo").textContent = tmp.combo
-	if(column!==undefined){
-		//draw hit/miss icons
-		bctx.beginPath()
-		bctx.clearRect(column*options.width+options.width/2-11,Number(options.hitPosition)+9,22,22)
-		bctx.arc(column*options.width+options.width/2, Number(options.hitPosition)+20, 10, 0,Math.PI*2)
-		if (num==1) bctx.fillStyle = "green"
-		else bctx.fillStyle = "red";
-		bctx.fill()
-	}
-	if(tmp.combo > tmp.bestcombo || reset){
-		tmp.bestcombo = tmp.combo
-		document.getElementById("bestcombo").textContent = "Best combo: "+tmp.bestcombo
-		document.getElementById("combodifficulty").innerHTML = "at "+options.BPM+" BPM, "+options.scrollSpeed+"ms speed, <br>"+options.columns+"k, "+options.hitWindow+"ms hit window"
-	}
-}
 
 function applyOptions(){
 	options.BPM = document.getElementById("bpm").value
@@ -309,10 +349,6 @@ function applyOptions(){
 
 function saveOptions(){
 	localStorage.setItem("LNtr-options", JSON.stringify(options))
-}
-
-function resetPB(){
-	combo(0, true)
 }
 
 function editControls(key = undefined){
@@ -339,10 +375,6 @@ function editControls(key = undefined){
 			return document.getElementById("controls").style.display = "flex"
 		}
 }
-window.onload = ()=>{
-	setup()
-	draw()
-} 
 
 window.addEventListener("keydown",(e) => {
 	if (e.repeat) return
@@ -352,8 +384,7 @@ window.addEventListener("keydown",(e) => {
 	let column = options.controls[options.columns].indexOf(e.code)
 	if (column !== -1) {
 		const now = Date.now()
-		const delta = Date.now() - tmp.lastAdded
-		tmp.state[column] = 1
+		tmp.inputState[column] = key.down
 		tmp.stateChange[column] = now
 	}
 })
@@ -362,10 +393,9 @@ window.addEventListener("keyup",(e) => {
 	if (e.repeat) return
 	let column = options.controls[options.columns].indexOf(e.code)
 	if (column !== -1) {
-		tmp.state[column] = 0
+		tmp.inputState[column] = key.up
 		//if released mid-ln
-		const now = Date.now()
-		const delta = Date.now() - tmp.lastAdded
+		const delta = Date.now() - stage.notes.lastAdded
 		if(delta < options.hitWindow || delta > (1000*(60/options.BPM)-options.hitWindow)){
 			if (delta <= options.hitWindow){
 				if(tmp.notes[0][column] === 0){
@@ -374,23 +404,28 @@ window.addEventListener("keyup",(e) => {
 				} else if
 				(tmp.notes[0][column] === 1){
 					tmp.failedColumns[column] = 0
-					combo(0, false, column)
+					combo.miss(column)
 				}
 			} else {
 				if(tmp.notes[0][column] === 1 && tmp.notes[1][column] === 0){
 					//early lift
-					combo(1, false, column)
+					combo.hit(column)
 				} else {
 					//failed lift
 					tmp.failedColumns[column] = 0
-					combo(0, false, column)
+					combo.miss(column)
 				}
 			}
 
 		}
 		else if (tmp.notes[0][column] === 1){
 			tmp.failedColumns[column] = 0
-			combo(0, false, column)
+			combo.miss(column)
 		}
 	}
 })
+
+window.onload = ()=>{
+	setup()
+	draw()
+} 
