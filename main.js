@@ -51,6 +51,7 @@ let tmp = {
 	editingControls: false,
 	onkey:0,
 	fhcounter:0,
+	firstColDigit:0,
 }
 
 function setup(){
@@ -75,7 +76,6 @@ function setup(){
 		)
 	}
 	else if(options.type == "7everyother"){
-		console.log("asd")
 		tmp.fhcounter = 0
 		for(let i=0; i<30; i++){
 			if(tmp.fhcounter%2 == 0){
@@ -85,6 +85,16 @@ function setup(){
 				tmp.notes[i]=Array.from({length: options.columns}, () => Math.round(Math.random()))
 			}
 			tmp.fhcounter++
+		}
+	}
+
+	else if(options.type == "brackets"){
+		for(let i=0; i<30; i++){
+			tmp.notes.push([])
+			for(let x=0; x<options.columns; x++){
+				tmp.notes[i].push((tmp.firstColDigit+x%2)%2)
+			}
+			tmp.firstColDigit = (tmp.firstColDigit+1)%2
 		}
 	}
 
@@ -175,8 +185,8 @@ function generateNotes(){
 		tmp.notes.push(Array.from({length: options.columns}, 
 			() => Math.round(Math.random()))	
 		)	
-	} else
-	if(options.type == "7everyother"){
+	} 
+	else if(options.type == "7everyother"){
 		if(tmp.fhcounter%2 == 0){
 			tmp.notes.push(
 				Array.from({length: options.columns}, 
@@ -191,6 +201,14 @@ function generateNotes(){
 			)
 		}
 		tmp.fhcounter++
+	}
+	else if(options.type == "brackets"){
+		next=[]
+		for(let x=0; x<options.columns; x++){
+			next.push((tmp.firstColDigit+x%2)%2)
+		}
+		tmp.notes.push(next)
+		tmp.firstColDigit = (tmp.firstColDigit+1)%2
 	}
 
 	for(let i=0; i<tmp.failedColumns.length; i++){
